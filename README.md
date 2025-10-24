@@ -66,6 +66,9 @@ The tool supports the following protocols:
 
 * WebSocket
 
+The tool also supports capturing multiple URLs at once. The intent is you can
+capture interactions with many services (WebSocket, HTTP, whatever) in one run.
+
 ## Capture
 
 ### Recorder
@@ -100,7 +103,7 @@ const recorder = new GlassSkeletonRecorder({
     resolve: path.resolve,
   },
   protocol: GlassSkeletonRecorder.SupportedProtocol.WebSocket,
-  urlToWatch: /wss:\/\/api.example.com/
+  urlRegExpStr: 'wss://api.example.com'
 })
 ```
 

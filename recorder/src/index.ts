@@ -2,13 +2,31 @@ import BSON = require('bson')
 
 type Exchanges = ({ request: string } | { response: string })[]
 
+type Capture = {
+  capture: Record<
+    string /* URL */,
+    // Open to extension.
+    {
+      exchanges: Exchanges,
+    }
+  >
+}
+
+type CaptureFn<T> = (passedIn: T) => void
+
+type ForOtherEnv = {
+  IDENTIFIER: typeof IDENTIFIER,
+  urlRegExpStr: string,
+}
+
 declare global {
   interface Window {
-    exchanges: Exchanges
+    glassSkeletonCapture: Capture
   }
 }
 
 const DIR_BONEYARD = 'boneyard'
+const IDENTIFIER = '#GlassSkeletonRecorder'
 
 class GlassSkeletonRecorder {
   // Why isn't this the same as the window.exchanges? It's because this code
@@ -17,7 +35,7 @@ class GlassSkeletonRecorder {
   // I've written the code to be environment generic, and always see the world
   // as having this bridge, but sometimes, there is actually none, such as
   // a regular web browser.
-  public exchangesBuffered: Exchanges = []
+  public capture: Capture = { capture: {} }
 
   // Various environments have different mechanisms to interact with the page.
   // It's really unfortunate, but playwright appears to require the page
@@ -31,7 +49,7 @@ class GlassSkeletonRecorder {
     page: any,
   } | {
     type: 'browser',
-    onPageReady: (fn: () => void) => Promise<void>,
+    onPageReady: <T>(fn: CaptureFn<T>, passInto: T) => Promise<void>,
     executeWithinPage: <T>(fn: () => T) => Promise<T>
   }) & {
     fs: {
@@ -41,6 +59,11 @@ class GlassSkeletonRecorder {
     path: {
       resolve: (...path: string[]) => string,
     }
+  } & {
+    resources: {
+      protocol: GlassSkeletonRecorder.SupportedProtocol,
+      urlRegExpStr: string,
+    }[]
   }
 
   constructor(env: GlassSkeletonRecorder['env']) {
@@ -48,28 +71,44 @@ class GlassSkeletonRecorder {
   }
 
   async start() {
-    // Re-initialize captured exchanges
-    this.exchangesBuffered = []
+    // Make sure we're starting with a fresh capture.
+    this.capture = { capture: {} }
 
-    const fnWithinOtherEnv = () => {
-      window.exchanges = []
+    const captureWebSocket = (passedInto: ForOtherEnv) => {
+      // I've tried to avoid property-name clashing but TypeScript makes it
+      // not possible because this name is generated at runtime (not TS's fault).
+      window.glassSkeletonCapture  = { capture: {} }
 
-      console.log('#glassSkeleton Proxying WebSocket')
+      console.log(passedInto.IDENTIFIER, 'Hooked into other environment')
       const WebSocketOg = window.WebSocket
       const WebSocketProxy = new Proxy(WebSocketOg, {
-        construct(...args) {
-          console.log('#glassSkeleton Intercepting constructor')
+        construct(target, argumentsList, newTarget) {
+          const ogSocket = Reflect.construct(target, argumentsList, newTarget)
+          const url = argumentsList[0]
 
-          const ogSocket = Reflect.construct(...args)
+          const urlRegExp = new RegExp(passedInto.urlRegExpStr)
+          if (urlRegExp.test(url) === false) {
+            console.log(passedInto.IDENTIFIER, "This WebSocket didn't match")
+            console.log(passedInto.IDENTIFIER, url)
+            return ogSocket
+          }
+          
+          console.log(passedInto.IDENTIFIER, 'Intercepting WebSocket constructor')
+
+          const resource: { exchanges: Exchanges }  = {
+            exchanges: []
+          }
+
+          window.glassSkeletonCapture.capture[url] = resource
 
           const ogSocketSend = ogSocket.send
           ogSocket.send = (...args: any[]) => {
-            window.exchanges.push({ request: args[0] })
-            ogSocketSend.apply(ogSocket, args)
+            resource.exchanges.push({ request: args[0] })
+            Reflect.apply(ogSocketSend, ogSocket, args)
           }
 
           ogSocket.addEventListener('message', (event: MessageEvent) => {
-            window.exchanges.push({ response: event.data })
+            resource.exchanges.push({ response: event.data })
           })
 
           return ogSocket
@@ -79,12 +118,29 @@ class GlassSkeletonRecorder {
       window.WebSocket = WebSocketProxy
     }
 
+    const captureFns: Record<
+      GlassSkeletonRecorder.SupportedProtocol,
+      CaptureFn<ForOtherEnv>
+    > = {
+      [GlassSkeletonRecorder.SupportedProtocol.WebSocket]: captureWebSocket
+    }
+
     switch (this.env.type) {
       case 'playwright':
-        await this.env.page.addInitScript(fnWithinOtherEnv)
+        for (const resource of this.env.resources) {
+          await this.env.page.addInitScript(captureFns[resource.protocol], {
+            IDENTIFIER,
+            urlRegExpStr: resource.urlRegExpStr,
+          })
+        }
         break
       case 'browser':
-        await this.env.onPageReady(fnWithinOtherEnv)
+        for (const resource of this.env.resources) {
+          await this.env.onPageReady(captureFns[resource.protocol], {
+            IDENTIFIER,
+            urlRegExpStr: resource.urlRegExpStr,
+          })
+        }
         break
     }
   }
@@ -92,13 +148,13 @@ class GlassSkeletonRecorder {
   async stop() {
     switch (this.env.type) {
       case 'playwright':
-        this.exchangesBuffered = await this.env.page.evaluate(() => {
-          return window.exchanges
+        this.capture = await this.env.page.evaluate(() => {
+          return window.glassSkeletonCapture
         })
         break
       case 'browser':
-        this.exchangesBuffered = await this.env.executeWithinPage<Exchanges>(() => {
-          return window.exchanges
+        this.capture = await this.env.executeWithinPage<Capture>(() => {
+          return window.glassSkeletonCapture
         })
         break
     }
@@ -108,7 +164,13 @@ class GlassSkeletonRecorder {
     const outputDirComplete = this.env.path.resolve(args.outputDir, DIR_BONEYARD)
     this.env.fs.mkdir(outputDirComplete)
     const outputPathFull = this.env.path.resolve(outputDirComplete, args.outputName)
-    return this.env.fs.writeFile(outputPathFull, BSON.serialize({ capture: this.exchangesBuffered }))
+    return this.env.fs.writeFile(outputPathFull, BSON.serialize(this.capture))
+  }
+}
+
+namespace GlassSkeletonRecorder {
+  export enum SupportedProtocol {
+    WebSocket = 'WebSocket',
   }
 }
 
