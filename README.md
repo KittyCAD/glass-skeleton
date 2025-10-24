@@ -158,11 +158,9 @@ The configuration is in JSON, and the filepath is passed as an argument so
 there's no guessing where it lives. Alternatively you can use an environment
 variable.
 
-Envvar templating can be used to insert dynamic data. Anything in `ENV{ }ENV`
-will be evaluated as an environment variable.
-
-The syntax for this is "heavy" to discourage abuse of dynamic data inserted
-into configurations, and to make it very visually obvious when it is.
+If there's a need for a more dynamic configuration file, like using environment
+variables, it's highly encourages to instead generate the JSON using tools
+or languages of your choice.
 
 
 ```json
@@ -173,7 +171,7 @@ into configurations, and to make it very visually obvious when it is.
       "requestReplacements": [
         {
           "regExpStr": "\"Authorization\": \"Bearer \"",
-          "insteadUse": "\"Authorization\": \"Bearer ENV{ $API_TOKEN }ENV\"",
+          "insteadUse": "\"Authorization\": \"Bearer some-api-token-here",
         }
       ]
     }
