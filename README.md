@@ -27,6 +27,12 @@ expected.
 In short: *you want to use this tool if you want to create "interaction
 API contracts"*.
 
+**Note**: This does *not* remove the need for E2Es, as they're still required
+to check complex data->component transformations / visualizations.
+Additionally the E2Es are needed to generate the glass skeletons in the first
+place (although you can get away with just the Chrome extension, which is a
+totally valid use-case).
+
 ## Why the name?
 
 Because Playwright is metaphorically a person clicking and pressing keys and
