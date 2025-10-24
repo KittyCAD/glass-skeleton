@@ -3,9 +3,29 @@
 JavaScript/TypeScript tooling to distill and replay E2E tests as server
 request/response pairs.
 
-The tool supports the following protocols:
+Why would you ever want such a tool? Let me explain.
 
-* WebSocket
+E2E testing frameworks, such as Playwright, while extremely useful in capturing
+and testing user behaviors, have the downside of being slow and flakey.
+
+It was clear to us that E2Es were genuinely useful, especially for establishing
+implicit "contracts" between the server and client. The E2Es for us were
+essentially micro-API contracts that the server had to always abide by.
+
+Given that, and knowledge that pure information is faster to check than awaiting
+virtual interactions, the concept behind "glass skeletons" is simple:
+
+Interactions are service exchanges.
+
+A click that leads to a request is captured. A response is usually then either
+acted on by the system or visualized in some way.
+
+As long as those two parts are captured and used to replay and check, we can
+guarantee the client will act the same way if the service gives us what's
+expected.
+
+In short: *you want to use this tool if you want to create "interaction
+API contracts"*.
 
 # Requirements
 
@@ -20,6 +40,10 @@ We try to not make the versions matter, as long as they can run ES6+ code.
 
 At a high level, the recording mechanisms (detailed below) output a BSON capture
 file that is then fed into a replay tool.
+
+The tool supports the following protocols:
+
+* WebSocket
 
 ## Capture
 
