@@ -3,7 +3,12 @@
 JavaScript/TypeScript tooling to distill and replay E2E tests as server
 request/response pairs.
 
-Why would you ever want such a tool? Let me explain.
+Why would you ever want such a tool?
+
+The short version: *you want to use this tool if you want to create "interaction
+API contracts"*.
+
+The long version: Let me explain.
 
 E2E testing frameworks, such as Playwright, while extremely useful in capturing
 and testing user behaviors, have the downside of being slow and flakey.
@@ -29,9 +34,6 @@ acted on by the system or visualized in some way.
 As long as those two parts are captured and used to replay and check, we can
 guarantee the client will act the same way if the service gives us what's
 expected.
-
-In short: *you want to use this tool if you want to create "interaction
-API contracts"*.
 
 **Note**: This does *not* remove the need for E2Es, as they're still required
 to check complex data->component transformations / visualizations.
