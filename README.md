@@ -102,8 +102,10 @@ const recorder = new GlassSkeletonRecorder({
   path: {
     resolve: path.resolve,
   },
-  protocol: GlassSkeletonRecorder.SupportedProtocol.WebSocket,
-  urlRegExpStr: 'wss://api.example.com'
+  resources: [{
+    protocol: GlassSkeletonRecorder.SupportedProtocol.WebSocket,
+    urlRegExpStr: 'wss://api.example.com'
+  }]
 })
 ```
 
