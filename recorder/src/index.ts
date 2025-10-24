@@ -17,6 +17,7 @@ type CaptureFn<T> = (passedIn: T) => void
 type ForOtherEnv = {
   IDENTIFIER: typeof IDENTIFIER,
   urlRegExpStr: string,
+  removeMatchingRegExpStrs: string[],
 }
 
 declare global {
@@ -49,7 +50,7 @@ class GlassSkeletonRecorder {
     page: any,
   } | {
     type: 'browser',
-    onPageReady: <T>(fn: CaptureFn<T>, passInto: T) => Promise<void>,
+    onPageReady: <T>(fn: CaptureFn<T>, passIn: T) => Promise<void>,
     executeWithinPage: <T>(fn: () => T) => Promise<T>
   }) & {
     fs: {
@@ -63,6 +64,8 @@ class GlassSkeletonRecorder {
     resources: {
       protocol: GlassSkeletonRecorder.SupportedProtocol,
       urlRegExpStr: string,
+      // Intended to remove sensitive data. Uses regular expressions.
+      removeMatchingRegExpStrs: string[]
     }[]
   }
 
@@ -74,26 +77,26 @@ class GlassSkeletonRecorder {
     // Make sure we're starting with a fresh capture.
     this.capture = { capture: {} }
 
-    const captureWebSocket = (passedInto: ForOtherEnv) => {
+    const captureWebSocket = (passedIn: ForOtherEnv) => {
       // I've tried to avoid property-name clashing but TypeScript makes it
       // not possible because this name is generated at runtime (not TS's fault).
       window.glassSkeletonCapture  = { capture: {} }
 
-      console.log(passedInto.IDENTIFIER, 'Hooked into other environment')
+      console.log(passedIn.IDENTIFIER, 'Hooked into other environment')
       const WebSocketOg = window.WebSocket
       const WebSocketProxy = new Proxy(WebSocketOg, {
         construct(target, argumentsList, newTarget) {
           const ogSocket = Reflect.construct(target, argumentsList, newTarget)
           const url = argumentsList[0]
 
-          const urlRegExp = new RegExp(passedInto.urlRegExpStr)
+          const urlRegExp = new RegExp(passedIn.urlRegExpStr)
           if (urlRegExp.test(url) === false) {
-            console.log(passedInto.IDENTIFIER, "This WebSocket didn't match")
-            console.log(passedInto.IDENTIFIER, url)
+            console.log(passedIn.IDENTIFIER, "This WebSocket didn't match")
+            console.log(passedIn.IDENTIFIER, url)
             return ogSocket
           }
           
-          console.log(passedInto.IDENTIFIER, 'Intercepting WebSocket constructor')
+          console.log(passedIn.IDENTIFIER, 'Intercepting WebSocket constructor')
 
           const resource: { exchanges: Exchanges }  = {
             exchanges: []
@@ -103,7 +106,13 @@ class GlassSkeletonRecorder {
 
           const ogSocketSend = ogSocket.send
           ogSocket.send = (...args: any[]) => {
-            resource.exchanges.push({ request: args[0] })
+            const removalRegExps = passedIn.removeMatchingRegExpStrs
+              .map((str) => new RegExp(str))
+
+            let request = args[0]
+
+            removalRegExps.forEach((r) => { request = request.replace(r, '') })
+            resource.exchanges.push({ request })
             Reflect.apply(ogSocketSend, ogSocket, args)
           }
 
@@ -125,23 +134,23 @@ class GlassSkeletonRecorder {
       [GlassSkeletonRecorder.SupportedProtocol.WebSocket]: captureWebSocket
     }
 
-    switch (this.env.type) {
-      case 'playwright':
-        for (const resource of this.env.resources) {
+    for (const resource of this.env.resources) {
+      switch (this.env.type) {
+        case 'playwright':
           await this.env.page.addInitScript(captureFns[resource.protocol], {
             IDENTIFIER,
             urlRegExpStr: resource.urlRegExpStr,
+            removeMatchingRegExpStrs: resource.removeMatchingRegExpStrs,
           })
-        }
-        break
-      case 'browser':
-        for (const resource of this.env.resources) {
+          break
+        case 'browser':
           await this.env.onPageReady(captureFns[resource.protocol], {
             IDENTIFIER,
             urlRegExpStr: resource.urlRegExpStr,
+            removeMatchingRegExpStrs: resource.removeMatchingRegExpStrs,
           })
-        }
-        break
+          break
+      }
     }
   }
 

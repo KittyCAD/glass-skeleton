@@ -85,6 +85,12 @@ the users responsibility to call those methods in the correct places.
 The output of a capture is in BSON, as it has the ability to keep binary together
 with other metadata. Please refer to the class for its structure.
 
+The BSON data can be more comfortably read using
+`node replay/index.ts --view '<capture.json>'`.
+
+When sharing individual BSON captures, be courteous and upload a human-friendly
+version to a snippet service and share that URL.
+
 #### Configuration
 
 The `GlassSkeletonRecorder` class takes a configuration object which passes in
@@ -104,7 +110,13 @@ const recorder = new GlassSkeletonRecorder({
   },
   resources: [{
     protocol: GlassSkeletonRecorder.SupportedProtocol.WebSocket,
-    urlRegExpStr: 'wss://api.example.com'
+    urlRegExpStr: 'wss://api.example.com',
+    // Mask out sensitive values.
+    // Note: During replay, the same matching will have to be done in order
+    // to place valid values, such as a valid API token, for the request.
+    removeMatchingRegExpStrs: [
+      'api-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',
+    ]
   }]
 })
 ```
@@ -130,7 +142,7 @@ After a `<capture>.bson` file is generated, it's time to replay the
 requests against the server.
 
 1. Start up the server that will consume the requests.
-2. Run `node replay.ts <capture>.bson`.
+2. Run `node replay/index.ts <capture>.bson`.
 3. Wait for it to complete.
 4. Review the final output for any failures.
 5. Either make adjustments to the server code, or the capture, and repeat.
