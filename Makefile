@@ -1,6 +1,6 @@
 .PHONY: build
 
-OUTPUTS=$(shell find dist/*)
+OUTPUTS=dist/
 
 build: $(OUTPUTS)
 
