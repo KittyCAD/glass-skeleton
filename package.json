@@ -1,7 +1,7 @@
 {
-  "name": "glass-skeleton-recorder",
+  "name": "@kittycad/glass-skeleton",
   "version": "0.0.1",
-  "description": "A class to produce glass skeletons.",
+  "description": "Tooling to produce and consume glass skeletons.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

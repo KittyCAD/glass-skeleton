@@ -1,4 +1,8 @@
-.PHONY: all
+.PHONY: build
 
-all:
-	$(MAKE) -C recorder/
+OUTPUTS=$(shell find dist/*)
+
+build: $(OUTPUTS)
+
+$(OUTPUTS): $(shell find src/* -name '*.ts' -type f)
+	npx tsc -p tsconfig.json
