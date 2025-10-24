@@ -15,7 +15,7 @@ essentially micro-API contracts that the server had to always abide by.
 Given that, and knowledge that pure information is faster to check than awaiting
 virtual interactions, the concept behind "glass skeletons" is simple:
 
-Interactions are service exchanges.
+<center>Interactions are service exchanges.</center>
 
 A click that leads to a request is captured. A response is usually then either
 acted on by the system or visualized in some way.
