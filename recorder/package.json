@@ -1,0 +1,25 @@
+{
+  "name": "playwright-glass-skeleton",
+  "version": "0.0.1",
+  "description": "A playwright fixture to produce glass skeletons.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "make": "make"
+  },
+  "keywords": [
+    "playwright",
+    "fixture",
+    "glass",
+    "skeleton"
+  ],
+  "author": "Lee Fallat",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.8.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "bson": "^6.10.4"
+  }
+}
