@@ -141,8 +141,59 @@ It has two buttons:
 After a `<capture>.bson` file is generated, it's time to replay the
 requests against the server.
 
+Before getting into the workflow, let's address what configuration is needed.
+
+### Configuration
+
+While the capture files contain 99% of the information required to recreate a
+session, there are still some values that need to be populated or replaced
+within them.
+
+Typically you'll find yourself needing to insert or replace:
+
+* API urls (ex: api.example.com -> localhost:9999)
+* API tokens (actually inserting them)
+
+The configuration is in JSON, and the filepath is passed as an argument so
+there's no guessing where it lives. Alternatively you can use an environment
+variable.
+
+Envvar templating can be used to insert dynamic data. Anything in `ENV{ }ENV`
+will be evaluated as an environment variable.
+
+The syntax for this is "heavy" to discourage abuse of dynamic data inserted
+into configurations, and to make it very visually obvious when it is.
+
+
+```json
+{
+  "resources": {
+    "wss://api.example.com": {
+      "insteadUse": "ws://localhost:9000/websocket",
+      "requestReplacements": [
+        {
+          "regExpStr": "\"Authorization\": \"Bearer \"",
+          "insteadUse": "\"Authorization\": \"Bearer ENV{ $API_TOKEN }ENV\"",
+        }
+      ]
+    }
+  }
+}
+```
+
+For example:
+```sh
+node @kittycad/glass-skeleton/dist/replay/index.js --conf ./dev.json <capture.bson>
+# or
+GLASS_SKELETON_CONF=./dev.json node @kittycad/glass-skeleton/dist/replay/index.js <capture.bson>
+```
+
+### Workflow
+
+The intended way to use the replay system is as follows:
+
 1. Start up the server that will consume the requests.
-2. Run `node replay/index.ts <capture>.bson`.
+2. Run `node @kittycad/glass-skeleton/dist/replay/index.js <capture>.bson`.
 3. Wait for it to complete.
 4. Review the final output for any failures.
 5. Either make adjustments to the server code, or the capture, and repeat.
