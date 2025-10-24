@@ -1,24 +1,11 @@
 import BSON = require('bson')
 
-type Exchanges = ({ request: string } | { response: string })[]
-
-type Capture = {
-  capture: Record<
-    string /* URL */,
-    // Open to extension.
-    {
-      exchanges: Exchanges,
-    }
-  >
-}
-
-type CaptureFn<T> = (passedIn: T) => void
-
-type ForOtherEnv = {
-  IDENTIFIER: typeof IDENTIFIER,
-  urlRegExpStr: string,
-  removeMatchingRegExpStrs: string[],
-}
+import type {
+  Capture,
+  CaptureFn,
+  Exchanges,
+  ForOtherEnv,
+} from '../'
 
 declare global {
   interface Window {
@@ -184,5 +171,5 @@ namespace GlassSkeletonRecorder {
 }
 
 export = {
-  GlassSkeletonRecorder
+  GlassSkeletonRecorder,
 }
