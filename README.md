@@ -27,6 +27,13 @@ expected.
 In short: *you want to use this tool if you want to create "interaction
 API contracts"*.
 
+## Why the name?
+
+Because Playwright is metaphorically a person clicking and pressing keys and
+waiting around for stuff to happen. I wanted to keep this metaphor but reflect
+that it's a much lighter variant of a person, but also, that when something
+goes wrong, they explode into a bajillion shards. Thus: the glass skeleton.
+
 # Requirements
 
 The usual suspects:
