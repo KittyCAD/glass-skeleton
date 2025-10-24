@@ -1,7 +1,7 @@
 {
-  "name": "playwright-glass-skeleton",
+  "name": "glass-skeleton-recorder",
   "version": "0.0.1",
-  "description": "A playwright fixture to produce glass skeletons.",
+  "description": "A class to produce glass skeletons.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
