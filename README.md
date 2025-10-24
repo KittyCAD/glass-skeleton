@@ -12,6 +12,12 @@ It was clear to us that E2Es were genuinely useful, especially for establishing
 implicit "contracts" between the server and client. The E2Es for us were
 essentially micro-API contracts that the server had to always abide by.
 
+This is particularly useful because a lot of service developers don't want
+"totality checking" aka an extremely rigorous API contract they have to work
+against, otherwise, breaking changes will happen extremely often. If you're
+versioning your API, this is not a factor, but a lot of the time teams aren't
+because of the inherent infrastructure complexity.
+
 Given that, and knowledge that pure information is faster to check than awaiting
 virtual interactions, the concept behind "glass skeletons" is simple:
 
